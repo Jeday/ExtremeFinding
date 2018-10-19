@@ -6,7 +6,7 @@
 #include <time.h>
 #include <cmath>
 
-#define EPS 0.00001
+#define EPS 0.000001
 #define MIN_P -100
 #define MAX_P 100
 
@@ -49,7 +49,7 @@ class funct{
 
 
 double curve (double x,double y) {
-	return x*x + y*y;
+	return x * x*x + 3 * x*y*y - 15 * x - 12 * y + 1;
 }
 
 bool cmp(const point& a, const point&b) {
