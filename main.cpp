@@ -33,7 +33,17 @@ public:
 	double distance_to(point p) {
 		return std::sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y));
 	}
+
+     friend std::ostream& operator<< (std::ostream& os, const point& p)
+    {
+        os << "x="<<p.x<<", y="<<p.y;
+        return os;
+    }
+
 };
+
+
+
 
 class funct{
   public:
@@ -92,6 +102,8 @@ class genetics{
 
 
    point * genetic(bool f) {
+       iter = 100;
+       int total = iter;
        std::vector<point> population(105);
        for (int i = 0; i < 105; ++i) {
            double x = fRand(MIN_P, MAX_P);
@@ -99,12 +111,14 @@ class genetics{
            population[i] = point(x, y);
        }
 
+
        f ? std::sort(population.begin(), population.end(), [this](const point& a, const point&b)->bool{ return this->crv(a.x, a.y) < this->crv(b.x, b.y);}) :
            std::sort(population.begin(), population.end(), [this](const point& a, const point&b)->bool{ return this->crv(a.x, a.y) > this->crv(b.x, b.y);});
        point alpha_male = *population.rbegin();
        do {
 
            auto b = population.rbegin();
+           std::cout<<"\tIter: "<<total - iter<<"\t Alpha Male: x:"<<b->x<<", y: "<<b->y<<", f(x,y)="<<crv(alpha_male.x,alpha_male.y)<<std::endl;
            std::vector<point> selection(15);
            for (int i = 0; i < 15; ++i) {
                selection[i] = *b;
@@ -121,14 +135,15 @@ class genetics{
            }
            f ? std::sort(population.begin(), population.end(), [this](const point& a, const point&b)->bool{ return this->crv(a.x, a.y) < this->crv(b.x, b.y);}) :
                std::sort(population.begin(), population.end(), [this](const point& a, const point&b)->bool{ return this->crv(a.x, a.y) > this->crv(b.x, b.y);});
-         // std::cout << population.rbegin()->x << "," << population.rbegin()->y << std::endl;
            --iter;
 
            if (population.rbegin()->distance_to(alpha_male) < EPS ) {
                alpha_male = *population.rbegin();
+               std::cout<<"RESULT FOUND: x="<<alpha_male.x<<", y="<<alpha_male.y<<", f(x,y)="<<crv(alpha_male.x,alpha_male.y)<<std::endl;
                break;
            }
            else if(iter <0){
+               std::cout<<"SEARCH UNSUCCEFUL"<<std::endl;
                return nullptr;
 
            }
@@ -148,7 +163,11 @@ public:
    }
 
    point * operator()(){
+       std::cout<<"Genetic algtorithm:"<<std::endl;
+       std::cout<<"Looking for maximum:"<<std::endl;
+
        point * res_max = genetic(true);
+       std::cout<<"Looking for minimum:"<<std::endl;
        point * res_min = genetic(false);
        if(res_max){
            if(res_min)
@@ -182,14 +201,19 @@ class annealing {
 		point p = point(0, 0);
 		double fp = crv(p.x, p.y);
 		while (T > 0) {
+            bool print = std::abs(T- std::round(T))<EPS;
+            if(print) std::cout<<"\t TEMP:"<<T<<":"<<std::endl;
 			point np = offset(p);
 			double fnp = crv(np.x, np.y);
+             if(print) std::cout<<"\t\t old pnt("<<p<<") old val="<<fp<<std::endl;
+             if(print) std::cout<<"\t\t new pnt("<<np<<") nev val="<<fnp<<std::endl;
 			if (f? (fp < fnp || fRand(0, 1) <= std::exp((fnp - fp) / T)) : (fnp < fp || fRand(0, 1) <= std::exp(-(fnp - fp) / T))) {
 				p = np;
 				fp = fnp;
 			}
-			T -= 0.01;
+            T -= 0.1;
 		}
+        std::cout<<"RESULT:"<<p<<" f(x,y)="<<fp<<std::endl;
 		return p;
 	}
 
@@ -201,7 +225,10 @@ public:
 	}
 
 	point operator()() {
+        std::cout<<"SIMULATED ANNEALING ALGORITHM:"<<std::endl;
+        std::cout<<"Locating maximum:"<<std::endl;
 		point res_max = anneal(true);
+        std::cout<<"Locating minimum:"<<std::endl;
 		point res_min = anneal(false);
 		return abscmp(res_min, res_max) ? res_max : res_min;
 	}
@@ -214,13 +241,8 @@ int main()
 	std::srand(time(NULL));
     genetics g(curve);
     point * res1 = g();
-    std::cout << res1->x << ',' << res1->y << std::endl;
-    std::cout << curve(res1->x, res1->y) << std::endl;
-
-    annealing a(curve);
+    annealing a(curve,50);
 	point res2 = a();
-	std::cout << res2.x << ',' << res2.y << std::endl;
-	std::cout << curve(res2.x, res2.y) << std::endl;
 	std::system("pause");
     return 0;
 }
